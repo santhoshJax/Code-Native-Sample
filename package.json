@@ -1,0 +1,38 @@
+{
+  "name": "code-native-sample",
+  "version": "0.1.0",
+  "description": "Revecast Connect code-native integration: Salesforce sample flows (Fetch Accounts).",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "webpack",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "import": "npm run build && prism integrations:import"
+  },
+  "dependencies": {
+    "@prismatic-io/spectral": "10.35.0"
+  },
+  "devDependencies": {
+    "@prismatic-io/prism": "11.0.0",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.16.0",
+    "copy-webpack-plugin": "^12.0.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.6.3",
+    "webpack": "^5.95.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src"
+    ]
+  }
+}

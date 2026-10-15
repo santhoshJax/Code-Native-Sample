@@ -1,0 +1,70 @@
+# Builds the code-native integration and imports it into Revecast Connect.
+#
+# - Pull requests: npm ci + build + tests only (nothing is imported, so
+#   unmerged code never replaces the live integration).
+# - Push to main / manual run: same build, then `prism integrations:import`.
+#
+# Required repository secrets:
+#   PRISM_REFRESH_TOKEN  - refresh token for a Revecast Connect user
+#                          (get it locally with: npx prism me:token --type refresh)
+#   PRISMATIC_URL        - your Revecast Connect stack URL
+# Recommended repository variable:
+#   REVECAST_CONNECT_INTEGRATION_ID - ID of the integration to update. Leave it
+#                          unset for the very first import, then set it to the ID
+#                          that import returns so later runs update the same
+#                          integration instead of creating a new one.
+name: Revecast Connect - build and import
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: revecast-connect-import-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Import into Revecast Connect
+        if: github.event_name != 'pull_request'
+        env:
+          PRISM_REFRESH_TOKEN: ${{ secrets.PRISM_REFRESH_TOKEN }}
+          PRISMATIC_URL: ${{ secrets.PRISMATIC_URL }}
+          INTEGRATION_ID: ${{ vars.REVECAST_CONNECT_INTEGRATION_ID }}
+        run: |
+          if [ -z "$PRISM_REFRESH_TOKEN" ] || [ -z "$PRISMATIC_URL" ]; then
+            echo "::error::Set the PRISM_REFRESH_TOKEN and PRISMATIC_URL repository secrets."
+            exit 1
+          fi
+          if [ -n "$INTEGRATION_ID" ]; then
+            npx prism integrations:import --integration-id "$INTEGRATION_ID"
+          else
+            echo "::warning::REVECAST_CONNECT_INTEGRATION_ID is not set - this import creates a new integration."
+            npx prism integrations:import
+          fi
